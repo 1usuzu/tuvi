@@ -17,13 +17,22 @@ async function startGeminiWorker() {
     let context;
 
     try {
-        context = await chromium.launchPersistentContext(userDataDir, {
-            headless: false,
-            channel: 'chrome', 
+        const headlessEnv = process.env.PLAYWRIGHT_HEADLESS;
+        const headless =
+            headlessEnv === undefined ? true : String(headlessEnv).toLowerCase() !== "false";
+
+        // In container, Playwright bundled Chromium is preferred. Channel "chrome" often fails unless Chrome is installed.
+        const channel = process.env.PLAYWRIGHT_CHANNEL; // e.g. "chrome" for local dev
+
+        const launchOptions = {
+            headless,
             args: ['--disable-blink-features=AutomationControlled', '--no-sandbox', '--disable-infobars'],
             viewport: { width: 1280, height: 720 },
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-        });
+        };
+        if (channel) launchOptions.channel = channel;
+
+        context = await chromium.launchPersistentContext(userDataDir, launchOptions);
     } catch (err) {
         console.error("❌ Lỗi khởi tạo trình duyệt:", err.message);
         return; 

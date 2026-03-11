@@ -14,12 +14,15 @@ const app = express();
 dotenv.config();
 
 const port = process.env.PORT || 3000;
+const corsOrigin = process.env.CORS_ORIGIN;
 
 // --- 1. MIDDLEWARE (Bộ lọc bảo vệ & Xử lý dữ liệu) ---
 app.use(
   cors({
-    origin: true,        // Cho phép mọi tên miền (sau này deploy sẽ sửa thành tên miền cụ thể)
-    credentials: true,   // Cho phép gửi kèm cookie/token
+    origin: corsOrigin
+      ? corsOrigin.split(",").map((s) => s.trim())
+      : true, // default dev: allow all
+    credentials: true, // Cho phép gửi kèm cookie/token
   })
 );
 
@@ -28,6 +31,9 @@ app.use(express.json()); // Đọc dữ liệu JSON
 app.use(express.urlencoded({ extended: true })); // Đọc dữ liệu từ Form HTML chuẩn
 
 // --- 2. ROUTES (Định tuyến) ---
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true });
+});
 app.use("/api", routes);
 
 // --- 3. KHỞI ĐỘNG SERVER ---

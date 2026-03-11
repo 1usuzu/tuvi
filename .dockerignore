@@ -1,0 +1,26 @@
+# node / monorepo
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+
+# build artifacts
+**/dist
+**/build
+**/.vite
+
+# local env / secrets
+.env
+**/.env
+**/*.local
+**/config/service-account.json
+**/secrets/**
+
+# playwright profile & generated PDFs (persist via volumes instead)
+backend/gemini-profile-data
+backend/assets/reports
+
+# VCS / editor
+.git
+.github
+.vscode
+

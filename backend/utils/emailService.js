@@ -1,11 +1,21 @@
 // backend/utils/emailService.js
 const nodemailer = require('nodemailer');
 
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const EMAIL_FROM = process.env.EMAIL_FROM || (EMAIL_USER ? `"Thuận Thời Hiếu Mệnh" <${EMAIL_USER}>` : undefined);
+
+if (!EMAIL_USER || !EMAIL_PASS) {
+  console.warn(
+    "⚠️ EMAIL_USER/EMAIL_PASS chưa được set. Email service sẽ không gửi được mail (production nên set qua env)."
+  );
+}
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'ngttien.3725@gmail.com', 
-    pass: 'sjhw ncev dmbi zgbl'     
+    user: EMAIL_USER,
+    pass: EMAIL_PASS,
   }
 });
 
@@ -20,7 +30,7 @@ const sendSuccessEmail = async (dataOrEmail, oldFullNameParam) => {
   const genderText = data.gender === 'male' ? 'Nam' : (data.gender === 'female' ? 'Nữ' : 'Không rõ');
 
   const mailOptions = {
-    from: '"Thuận Thời Hiếu Mệnh" <ngttien.3725@gmail.com>', 
+    from: EMAIL_FROM,
     to: userEmail,
     subject: '✨ Xác nhận đăng ký luận giải Tử Vi thành công',
     html: `
@@ -64,7 +74,7 @@ const sendSuccessEmail = async (dataOrEmail, oldFullNameParam) => {
 // 3. Hàm gửi Mail 2: Gửi kết quả (GIỮ NGUYÊN)
 const sendResultEmail = async (userEmail, fullName, pdfBuffer) => {
   const mailOptions = {
-    from: '"Thuận Thời Hiếu Mệnh" <ngttien.3725@gmail.com>',
+    from: EMAIL_FROM,
     to: userEmail,
     subject: '📜 Kết quả luận giải Tử Vi của bạn đã sẵn sàng',
     html: `

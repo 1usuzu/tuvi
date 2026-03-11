@@ -3,13 +3,14 @@ import "./Review.css";
 
 const Review = ({ formData, onNext, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
   // HÀM NÀY ĐỂ GỬI DỮ LIỆU LÊN SERVER (KHÔNG PHẢI ĐỂ CHECK CAPTCHA)
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       // Gọi API thật ở đây
-      const response = await fetch('http://localhost:3000/api/user/submit', {
+      const response = await fetch(`${API_BASE}/api/user/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -24,7 +25,7 @@ const Review = ({ formData, onNext, onBack }) => {
       }
     } catch (error) {
       console.error(error);
-      alert("Lỗi kết nối tới Server cổng 3000!");
+      alert("Lỗi kết nối tới Server!");
     } finally {
       setIsSubmitting(false);
     }

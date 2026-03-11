@@ -1,0 +1,51 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      PORT: "3000"
+      NODE_ENV: "production"
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend-reports:/app/assets/reports
+      # Mount Google service account JSON (DO NOT COMMIT). Example:
+      # - ./secrets/service-account.json:/run/secrets/google-service-account.json:ro
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: "production"
+      PLAYWRIGHT_HEADLESS: "true"
+      # In container prefer bundled Chromium; set PLAYWRIGHT_CHANNEL=chrome only if you installed Chrome in image.
+      PLAYWRIGHT_CHANNEL: ""
+    depends_on:
+      - backend
+    volumes:
+      - gemini-profile-data:/app/gemini-profile-data
+      - backend-reports:/app/assets/reports
+      # Mount Google service account JSON (DO NOT COMMIT). Example:
+      # - ./secrets/service-account.json:/run/secrets/google-service-account.json:ro
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  gemini-profile-data:
+  backend-reports:

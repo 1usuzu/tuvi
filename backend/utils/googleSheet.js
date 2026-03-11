@@ -1,7 +1,24 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 const { Solar } = require('lunar-javascript');
-const creds = require('../config/service-account.json');
+const fs = require('fs');
+
+function loadServiceAccountCreds() {
+  // Prefer explicit env path; fallback to repo path for local dev.
+  const p = process.env.GOOGLE_SERVICE_ACCOUNT_PATH || require('path').join(__dirname, '../config/service-account.json');
+  try {
+    const raw = fs.readFileSync(p, 'utf8');
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn(
+      `⚠️ Không đọc được Google service account JSON tại "${p}". ` +
+        `Hãy mount file và set GOOGLE_SERVICE_ACCOUNT_PATH. Lỗi: ${e.message}`
+    );
+    return null;
+  }
+}
+
+const creds = loadServiceAccountCreds();
 
 const SHEET_ID = '1QeO5b7Y3rNd0dufZ1zCNvwsISdtptifIqpUAjtfPG2M'; 
 
@@ -9,11 +26,14 @@ const CAN = ['Canh', 'Tân', 'Nhâm', 'Quý', 'Giáp', 'Ất', 'Bính', 'Đinh',
 const CHI = ['Thân', 'Dậu', 'Tuất', 'Hợi', 'Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi'];
 
 // --- Má gom phần Auth lại dùng chung cho đỡ dài dòng ---
-const getAuth = () => new JWT({
+const getAuth = () => {
+  if (!creds) throw new Error("Missing Google service account creds. Set GOOGLE_SERVICE_ACCOUNT_PATH.");
+  return new JWT({
     email: creds.client_email,
     key: creds.private_key,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
+  });
+};
 
 // HÀM 1: Ghi thông tin ban đầu khi khách nhấn nút (PENDING)
 const appendToSheet = async (userData) => {

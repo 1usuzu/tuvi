@@ -1,0 +1,19 @@
+# Use official Playwright image to avoid missing browser deps in container.
+FROM mcr.microsoft.com/playwright:v1.58.0-jammy
+
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    PLAYWRIGHT_HEADLESS=true
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY . .
+
+# Persisted volumes will be mounted here by docker-compose, but ensure dirs exist.
+RUN mkdir -p /app/gemini-profile-data /app/assets/reports
+
+CMD ["node", "workers/geminiWorker.js"]
+

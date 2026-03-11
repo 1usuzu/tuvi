@@ -7,7 +7,7 @@ const { Readable } = require('stream');
 require('dotenv').config(); 
 // -----------------------------------------
 
-const KEYFILEPATH = path.join(__dirname, '../config/service-account.json');
+const KEYFILEPATH = process.env.GOOGLE_SERVICE_ACCOUNT_PATH || path.join(__dirname, '../config/service-account.json');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 const auth = new google.auth.GoogleAuth({
