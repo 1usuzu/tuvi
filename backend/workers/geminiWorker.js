@@ -15,10 +15,11 @@ async function startGeminiWorker() {
 
     const userDataDir = path.join(__dirname, '../gemini-profile-data');
     let context;
+    let headless = true;
 
     try {
         const headlessEnv = process.env.PLAYWRIGHT_HEADLESS;
-        const headless =
+        headless =
             headlessEnv === undefined ? true : String(headlessEnv).toLowerCase() !== "false";
 
         // In container, Playwright bundled Chromium is preferred. Channel "chrome" often fails unless Chrome is installed.
@@ -35,7 +36,7 @@ async function startGeminiWorker() {
         context = await chromium.launchPersistentContext(userDataDir, launchOptions);
     } catch (err) {
         console.error("❌ Lỗi khởi tạo trình duyệt:", err.message);
-        return; 
+        return;
     }
 
     const pageGemini = await context.newPage();
@@ -44,10 +45,18 @@ async function startGeminiWorker() {
 
     const isLoginRequired = await pageGemini.locator('a[href*="ServiceLogin"], input[type="email"]').isVisible();
     if (isLoginRequired) {
+        if (headless) {
+            console.error(
+                "❌ Gemini yêu cầu đăng nhập nhưng PLAYWRIGHT_HEADLESS=true. " +
+                "Hãy chạy worker 1 lần với PLAYWRIGHT_HEADLESS=false để login và lưu session vào volume gemini-profile-data."
+            );
+            process.exit(1);
+        }
         console.log("⚠️ Vui lòng đăng nhập Google trên cửa sổ Chrome...");
+        // Wait for chat input after manual login (interactive mode only)
         await pageGemini.waitForSelector('div[contenteditable="true"]', { state: 'visible', timeout: 0 });
         console.log("✅ Đã đăng nhập thành công!");
-        await pageGemini.waitForTimeout(3000); 
+        await pageGemini.waitForTimeout(3000);
     }
 
     while (true) {
@@ -60,7 +69,7 @@ async function startGeminiWorker() {
 
             const clientName = request.full_name || request.fullName || "Khách hàng";
             console.log(`\n=== 🎬 ĐANG XỬ LÝ ĐƠN HÀNG VIP: ${clientName} ===`);
-            
+
             await User.updateStatus(request.id, 'processing');
             await updateSheetStatus(request.email, 'PROCESSING');
 
@@ -69,29 +78,29 @@ async function startGeminiWorker() {
 
             try {
                 await pageGemini.goto('https://gemini.google.com/app', { waitUntil: 'domcontentloaded', timeout: 60000 });
-                
+
                 // 👉 LẤY CÁI SIÊU PROMPT GỘP 21 NGÀY BẮN VÀO ĐÂY
-                const prompt = getMasterPrompt(request); 
-                
+                const prompt = getMasterPrompt(request);
+
                 // GỌI BOT CHẠY ĐÚNG 1 LẦN DUY NHẤT
                 const geminiFinalResponse = await askGeminiOneShot(pageGemini, prompt, imageBuffer);
 
                 if (!geminiFinalResponse || geminiFinalResponse.length < 500) {
                     throw new Error("Lấy thiếu chữ hoặc không copy được!");
                 }
-                
+
                 await User.updateResult(request.id, geminiFinalResponse.substring(0, 1500) + "... (Đã lưu đủ 21 ngày)");
 
                 console.log("📦 Đã có chữ! Đang đổ vào xưởng in PDF...");
                 const chapterResults = [{ day: 1, title: `Luận Giải Chiến Lược 21 Ngày`, content: geminiFinalResponse }];
                 const pdfBuffer = await pdfService.generateUltimateReport(request, chapterResults, imageBuffer);
-                
+
                 console.log("📧 Đang gửi Email cho khách...");
                 await sendResultEmail(request.email, clientName, pdfBuffer);
-                
+
                 await User.updateStatus(request.id, 'completed');
                 await updateSheetStatus(request.email, 'DONE');
-                
+
                 console.log(`✅ NỔ ĐƠN THÀNH CÔNG RỰC RỠ CHO ${clientName}!`);
 
             } catch (innerError) {
@@ -156,9 +165,9 @@ async function askGeminiOneShot(page, prompt, imageBuffer) {
 
         const currentLength = await page.evaluate(() => {
             const selectors = [
-                'message-content', 
-                '.model-response-text', 
-                '[data-message-author-role="model"]', 
+                'message-content',
+                '.model-response-text',
+                '[data-message-author-role="model"]',
                 '.markdown-renderer'
             ];
             let length = 0;
@@ -166,7 +175,7 @@ async function askGeminiOneShot(page, prompt, imageBuffer) {
                 const elements = document.querySelectorAll(sel);
                 if (elements.length > 0) {
                     length = elements[elements.length - 1].innerText.length;
-                    break; 
+                    break;
                 }
             }
             return length;
@@ -176,13 +185,13 @@ async function askGeminiOneShot(page, prompt, imageBuffer) {
 
         if (currentLength > 500 && currentLength === previousLength) {
             stableCount++;
-            if (stableCount >= 2) { 
+            if (stableCount >= 2) {
                 console.log("✅ Xác nhận AI đã buông bút! Bắt đầu lấy bài...");
-                break; 
+                break;
             }
         } else {
-            stableCount = 0; 
-            previousLength = currentLength; 
+            stableCount = 0;
+            previousLength = currentLength;
         }
     }
 
@@ -191,9 +200,9 @@ async function askGeminiOneShot(page, prompt, imageBuffer) {
     console.log("📄 Đang hút nội dung sạch từ Gemini...");
     const text = await page.evaluate(() => {
         const selectors = [
-            'message-content', 
-            '.model-response-text', 
-            '[data-message-author-role="model"]', 
+            'message-content',
+            '.model-response-text',
+            '[data-message-author-role="model"]',
             '.markdown-renderer'
         ];
         for (let sel of selectors) {

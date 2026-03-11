@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+dist
+.vite
+
+# env (Vite) - don't bake local env files
+.env
+*.local
+
+.git
+.github
+.vscode
+

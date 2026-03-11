@@ -41,7 +41,7 @@ Open UI:
 
 ### Notes (Worker / Playwright / Gemini login)
 - Worker persists Chrome profile in docker volume `gemini-profile-data` → giữ session đăng nhập.
-- Mặc định worker chạy **headless** (`PLAYWRIGHT_HEADLESS=true`). Nếu cần login tương tác, set `PLAYWRIGHT_HEADLESS=false` và chạy worker foreground để quan sát log.
+- Mặc định worker chạy **headless** (`PLAYWRIGHT_HEADLESS=true`). Nếu Gemini yêu cầu login mà đang headless, worker sẽ **thoát với code 1** (tránh treo vô hạn). Lúc này hãy chạy worker 1 lần với `PLAYWRIGHT_HEADLESS=false` để login và lưu session vào volume, rồi bật headless lại.
 - Trong container nên để `PLAYWRIGHT_CHANNEL` rỗng (dùng Chromium bundled). `channel=chrome` thường fail nếu image không cài Chrome.
 
 ### Volumes

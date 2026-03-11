@@ -27,9 +27,13 @@ async function getHoroscopeImage(userData) {
     }
 
     // --- 2. KHỞI ĐỘNG TRÌNH DUYỆT ---
-    const browser = await chromium.launch({ 
-        headless: false, // Để false để bạn nhìn thấy nó chạy lần đầu, sau này đổi thành true
-        args: ['--start-maximized'] 
+    const headlessEnv = process.env.PLAYWRIGHT_HEADLESS;
+    const headless =
+        headlessEnv === undefined ? true : String(headlessEnv).toLowerCase() !== "false";
+
+    const browser = await chromium.launch({
+        headless,
+        args: ['--start-maximized', '--no-sandbox'],
     });
     
     // Tạo context để tránh lưu cache cũ

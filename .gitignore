@@ -20,6 +20,7 @@ backend/config/service-account.json
 # generated data (persisted via volumes / runtime)
 backend/gemini-profile-data/
 backend/assets/reports/
+debug-error.png
 
 # OS / editor
 .DS_Store

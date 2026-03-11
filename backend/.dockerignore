@@ -1,0 +1,19 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+assets/reports
+gemini-profile-data
+debug-error.png
+
+# env & secrets (never bake into image)
+.env
+*.local
+config/service-account.json
+secrets/
+
+.git
+.github
+.vscode
+
